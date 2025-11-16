@@ -1,95 +1,122 @@
 <!doctype html>
-<!--=======================================================
-//
-//     FILE : index.html
-//
-//  PROJECT : Any Chrome-based Web App requiring access to a Bluetooth Device
-//
-//    NOTES : The Web Bluetooth API only works in a secure context (https://...)
-//            The Arduino NANO 33 IoT board seems to stop responding if hit
-//            with too many BT messages too fast.
-//
-//   AUTHOR : Bill Daniels
-//            Copyright 2022-2024, D+S Tech Labs, Inc.
-//            MIT License
-//
-//======================================================-->
-
 <html lang="en-us">
-
-  <!-- Head -->
   <head>
-
-    <!-- These three meta tags MUST come first in the <head> tag. -->
-    <!-- All other <head> content must come AFTER these tags.     -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-
     <title>Web Bluetooth Template</title>
-
     <style>
-
-      body
-      {
-        margin     : 0;
-        padding    : 0;
-        min-height : 100vh;
-
-        color            : #F0F0F0;
-        background-color : #303040;
-
-        text-align : center;
+      body {
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        color: #F0F0F0;
+        background-color: #afafcd;
+        text-align: center;
       }
-
-      #dataWindow
-      {
-        display  : inline-block;
-        padding  : 0.5vh 0.5vw;
-        width    : 80vw;
-        height   : 30vh;
-        overflow : auto;
-
-        color            : #008000;
-        background-color : #202020;
-        border           : 0.2vw inset #505050;
-
-        font-family : sans-serif;
-        font-size   : large;
-
-        text-align : left;
+      #IMU {
+        display: block;
+        background-color: #232349;
+        padding: 3vh 0;
+        width: 86vw;
+        margin: 0 auto;
+        border-radius: 1vw;
       }
-
+      #IMU h2 {
+        text-align: left;
+        color: #F0F0F0;
+        margin-left: 2vw;
+      }
+      #dataWindow {
+        display: inline-block;
+        padding: 1vh 1vw;
+        width: 80vw;
+        height: 15vh;
+        overflow: auto;
+        color: #03ce03;
+        background-color: #202020;
+        border: 0.2vw inset #505050;
+        font-family: sans-serif;
+        font-size: large;
+        text-align: left;
+        margin-bottom: 3vh;
+      }
+      #graphWindow {
+        width: 76vw;
+        height: 24vh;
+        background: #FFF;
+        border: 0.2vw inset #808080;
+        margin: 2vh auto 3vh auto;
+        border-radius: 1vw;
+      }
+      #comms button, #IMU button {
+        padding: 1vh 3vw;
+        font-size: 1vw;
+        background: #008080;
+        color: #fff;
+        margin: 1vh 2vw;
+        border: none;
+        border-radius: 1vw;
+        cursor: pointer;
+        box-shadow: 0 2px 4px #111;
+        transition: background 0.2s;
+      }
+      #comms button:hover, #IMU button:hover {
+        background: #00c8c8;
+      }
+      #commandField {
+        font-size: 1.6vw;
+        margin-left: 1vw;
+        padding: 1vh;
+        border-radius: 0.6vw;
+      }
+      .advancedCmd {
+        margin-top: 2vh;
+        display: block;
+      }
     </style>
-
   </head>
 
 
-  <!-- Body -->
+
+
+
+
+  
   <body>
-
     <h1>Web Bluetooth Template</h1>
-    <br>
-
-    <button id="scanButton" style="padding:1vh 1vw; font-size:x-large; cursor:pointer" onpointerdown="scanForDevices()"> Scan for Bluetooth devices </button>
-    <img id="waitGif" src="wait.gif" style="display:none; width:5vw" />
-
-    <div id="comms" style="display:none; font-size:large">
-      <div id="dataWindow"></div><br>
-      <br>
-
-      <div style="font-size:x-large">
-        Enter command :
-        <input id="commandField" type="text" style="font-size:inherit" />
-        <button style="font-size:inherit" onclick="sendCommand()"> Send </button><br>
+    <div id="IMU">
+      <h2>IMU SENSOR</h2>
+      <button id="scanButton" onpointerdown="scanForDevices()">Scan for Bluetooth devices</button>
+      <img id="waitGif" src="wait.gif" style="display:none; width:5vw" />
+      <div id="comms" style="display:none;">
+        <div id="dataWindow"></div>
+        <div class="advancedCmd">
+          Enter command:
+          <input id="commandField" type="text" />
+          <button onclick="sendCommand()">Send</button>
+        </div>
+        <div id="graphWindow"></div>
+        <div>
+          <button id="captureBtn">Capture</button>
+          <div id="captureModal" style="display:none; position:fixed; left:0; top:0; width:100vw; height:100vh; background:#2228ccbb; z-index:2000; align-items:center; justify-content:center;">
+            <div style="background:#fff; color:#222; padding:3vw; border-radius:2vw; min-width:350px; text-align:center;">
+              <h3>What do you want to monitor?</h3>
+              <button onclick="startMonitoring('acc')" style="margin:2vh 1vw; font-size:x-large;">Linear Acceleration</button>
+              <button onclick="startMonitoring('gyro')" style="margin:2vh 1vw; font-size:x-large;">Gyroscope</button>
+              <button onclick="startMonitoring('hr')" style="margin:2vh 1vw; font-size:x-large;">Heart Rate (HR)</button>
+              <button onclick="startMonitoring('ecg')" style="margin:2vh 1vw; font-size:x-large;">ECG</button>
+              <br><br>
+              <button onclick="closeCaptureModal()" style="margin:2vh; font-size:large;">Cancelar</button>
+            </div>
+          </div>
+          <button id="uploadBtn">Upload</button>
+        </div>
       </div>
     </div>
-    <br>
-
-
-    <!-- Load scripts -->
     <script src="WebBluetooth.js"></script>
-
   </body>
-
 </html>
+
+
+

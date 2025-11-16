@@ -12,9 +12,9 @@
 
 //--- Globals ---------------------------------------------
 
-const deviceServiceUUID = '00001815-0000-1000-8000-00805f9b34fb';
-const commandCharUUID   = '00002b26-0000-1000-8000-00805f9b34fb';
-const responseCharUUID  = '00002b99-0000-1000-8000-00805f9b34fb';
+const deviceServiceUUID = '34802252-7185-4d5d-b431-630e7050e8f0';
+const commandCharUUID   = '34800001-7185-4d5d-b431-630e7050e8f0';
+const responseCharUUID  = '34800002-7185-4d5d-b431-630e7050e8f0';
 
 const dataWindow  = document.getElementById ('dataWindow');
 const textEncoder = new TextEncoder ();
@@ -217,4 +217,20 @@ function AddToLog (htmlMessage)
   {
     alert (ex);
   }
+}
+
+//--- Personalize variables to capture from the Sensor ------------
+document.getElementById('captureBtn').onclick = function() {
+  document.getElementById('captureModal').style.display = 'flex';
+};
+
+function closeCaptureModal() {
+  document.getElementById('captureModal').style.display = 'none';
+}
+
+function startMonitoring(type) {
+  closeCaptureModal();
+  // Aquí iría la lógica para enviar comandos y comenzar la monitorización del tipo seleccionado
+  AddToLog('Monitoring: ' + type);
+  // Por ejemplo: sendSubscribeCommand(type);
 }
