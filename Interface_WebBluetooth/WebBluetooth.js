@@ -47,9 +47,13 @@ async function scanForDevices ()
       //----------------------
       // Look for all devices
       //----------------------
-      acceptAllDevices : true,
-      optionalServices : [deviceServiceUUID]  // Required to access service later
+      //acceptAllDevices : true,
+      //optionalServices : [deviceServiceUUID],  // Required to access service later
 
+      filters: [
+          { namePrefix: 'Movesense' }
+        ],
+        optionalServices: [deviceServiceUUID]
 
 
       // //----------------------
