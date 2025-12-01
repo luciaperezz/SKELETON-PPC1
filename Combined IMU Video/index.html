@@ -168,7 +168,7 @@
 
     #container {
       position: relative;
-      width: 640px;        /* max Breite */
+      width: 480px;     
       max-width: 100%;
       /* Dynamische Höhe über aspect-ratio,
          wird später in JS auf das echte Videoformat gesetzt */
@@ -252,13 +252,13 @@
     .imu-charts {
       margin-top: 10px;
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr;  /* immer untereinander */
       gap: 8px;
     }
 
     .imu-chart {
       position: relative;
-      height: 140px;
+      height: 160px;          /* etwas höher für bessere Sichtbarkeit */
       background: rgba(0, 0, 0, 0.4);
       border-radius: 10px;
       padding: 6px;
@@ -275,7 +275,8 @@
       z-index: 10;
     }
 
-    /* Ab ~900px Bildschirmbreite: Video & IMU nebeneinander + 2 Spalten Charts */
+    /* Ab ~900px Bildschirmbreite: Video & IMU nebeneinander,
+       Video kleinerer Anteil, rechts mehr Platz */
     @media (min-width: 900px) {
       .viewer {
         flex-direction: row;
@@ -283,17 +284,13 @@
       }
 
       #container {
-        flex: 1 1 0;
-        margin-inline: 0; /* links im Flex-Layout */
+        flex: 0 0 40%;   /* ~40% für Video */
+        margin-inline: 0;
       }
 
       #imu-panel {
-        flex: 1 1 0;
-        margin-top: 0; /* seitlich daneben, kein extra Abstand nach oben */
-      }
-
-      .imu-charts {
-        grid-template-columns: 1fr 1fr;
+        flex: 1 1 60%;   /* ~60% für IMU / Plots */
+        margin-top: 0;
       }
     }
   </style>

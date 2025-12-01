@@ -575,7 +575,7 @@ async function renderFrame() {
   const modeLabel =
     currentMode === "live"
       ? "Mode: Live (fast)"
-      : "Mode: Upload (more accurate, slightly slower)";
+      : "Mode: Upload";
   ctx.fillText(modeLabel, 20, 32);
   ctx.fillText(`Pose score: ${pose.score.toFixed(2)}`, 20, 52);
 
