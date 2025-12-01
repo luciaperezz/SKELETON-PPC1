@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movesense IMU Sync</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: normal;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button, input {
+            padding: 8px 12px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            cursor: pointer;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        button:hover:not(:disabled) {
+            background: #444;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        input[type="file"] {
+            padding: 6px;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .status {
+            margin-bottom: 15px;
+            font-size: 0.85em;
+            color: #888;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .section {
+            border: 1px solid #333;
+            padding: 15px;
+            background: #0a0a0a;
+        }
+
+        .section-title {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            color: #666;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 250px;
+            margin-bottom: 20px;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #0f0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-container {
+            background: #000;
+            border: 1px solid #333;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            display: block;
+            object-fit: contain;
+        }
+
+        .timeline {
+            margin-bottom: 15px;
+        }
+
+        .timeline input {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .data-slider-wrapper {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .data-slider-wrapper input[type="range"] {
+            width: 100%;
+        }
+
+        .sync-controls {
+            margin-top: 15px;
+            padding: 10px;
+            border: 1px solid #444;
+            background: #111;
+        }
+
+        .sync-status {
+            font-size: 0.8em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .sync-status.synced {
+            color: #0f0;
+        }
+
+        .sync-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .sync-buttons button {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .timestamp-controls {
+            margin-top: 10px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .timestamp-controls input {
+            flex: 1;
+        }
+
+        .timestamp-list {
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #333;
+            padding: 5px;
+        }
+
+        .timestamp-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+            border-bottom: 1px solid #222;
+            font-size: 0.85em;
+        }
+
+        .timestamp-item button {
+            padding: 3px 6px;
+            font-size: 0.8em;
+        }
+
+        @media (max-width: 1200px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>movesense imu sync</h1>
+
+        <div class="status" id="status">ready</div>
+
+        <div class="controls">
+            <button id="uploadVideoBtn">Upload Video</button>
+            <input type="file" id="videoInput" accept="video/*" style="display:none">
+            
+            <button id="uploadCsvBtn">Upload CSV</button>
+            <input type="file" id="csvInput" accept=".csv" style="display:none">
+            
+            <button id="clearBtn">Clear All</button>
+        </div>
+
+        <div class="layout">
+            <!-- Video Section -->
+            <div class="section video-section">
+                <div class="section-title">Video</div>
+                <div class="video-container" id="videoContainer">
+                    <div style="color:#666;">no video loaded</div>
+                </div>
+                <div class="timeline">
+                    <div style="font-size:0.8em;color:#666;margin-bottom:5px">
+                        <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+                    </div>
+                    <input type="range" id="videoTimeline" min="0" max="0" value="0" step="0.001">
+                </div>
+                <div class="sync-controls">
+                    <div class="sync-status" id="syncStatus">sync offset: 0s</div>
+                    <div class="sync-buttons">
+                        <button id="markVideoBtn" disabled>Mark Video Time</button>
+                        <button id="markDataBtn" disabled>Mark Data Time</button>
+                        <button id="setSyncBtn" disabled>Apply Sync</button>
+                    </div>
+                </div>
+                <div class="timestamp-controls">
+                    <button id="addTimestampBtn" disabled>Add Timestamp</button>
+                    <input type="text" id="timestampLabel" placeholder="label (optional)">
+                </div>
+                <div class="timestamp-list" id="timestampList"></div>
+            </div>
+
+            <!-- Data Section -->
+            <div class="section">
+                <div class="section-title">IMU Data</div>
+                <div class="data-slider-wrapper">
+                    <input type="range" id="dataTimelineSlider" min="0" max="0" value="0" step="0.01">
+                </div>
+                <div style="font-size:0.8em;color:#666;margin:10px 0;">
+                    Data time: <span id="dataTimeDisplay">0:00</span>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-marker" id="marker0" style="display:none;"></div>
+                        <canvas id="chartAcc"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-marker" id="marker1" style="display:none;"></div>
+                        <canvas id="chartGyro"></canvas>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-marker" id="marker2" style="display:none;"></div>
+                        <canvas id="chartMag"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let charts = {};
+        let csvData = null;
+        let csvTimesSeconds = [];
+        let timestamps = [];
+        let videoFile = null;
+        let syncOffset = 0;
+        let videoMarkedTime = null;
+        let dataMarkedTime = null;
+        const SAMPLE_RATE_HZ = 104;
+        let dataSliderListener = null;
+        let lastUpdateTime = 0;
+        const UPDATE_THROTTLE_MS = 33; // ~30 FPS
+
+        // Initialize charts
+        function initCharts() {
+            const colors = ['#f00', '#0f0', '#00f'];
+            const axes = ['X', 'Y', 'Z'];
+            const sensorTypes = [
+                { id: 'chartAcc', title: 'Accelerometer (m/s²)' },
+                { id: 'chartGyro', title: 'Gyroscope (°/s)' },
+                { id: 'chartMag', title: 'Magnetometer (μT)' }
+            ];
+
+            sensorTypes.forEach(sensor => {
+                const existingChart = charts[sensor.id];
+                if (existingChart) {
+                    existingChart.destroy();
+                }
+                
+                const ctx = document.getElementById(sensor.id).getContext('2d');
+                charts[sensor.id] = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: axes.map((axis, i) => ({
+                            label: axis,
+                            data: [],
+                            borderColor: colors[i],
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0,
+                            borderWidth: 1,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            borderCapStyle: 'round',
+                            borderJoinStyle: 'round'
+                        }))
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        parsing: false,
+                        normalized: true,
+                        animation: false,
+                        interaction: { mode: 'nearest', intersect: false },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: sensor.title,
+                                font: { size: 14 },
+                                padding: { top: 5, bottom: 5 }
+                            },
+                            legend: { display: true, position: 'top', labels: { font: { size: 11 } } },
+                            tooltip: { enabled: false },
+                            decimation: { enabled: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, type: 'linear' },
+                            x: { type: 'linear', title: { display: true, text: 'Time (s)' }, min: 0, max: 5 }
+                        }
+                    }
+                });
+            });
+        }
+
+        // Format time
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 100);
+            return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        }
+
+        // Upload video
+        document.getElementById('uploadVideoBtn').addEventListener('click', () => {
+            document.getElementById('videoInput').click();
+        });
+
+        document.getElementById('videoInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                videoFile = file;
+                const url = URL.createObjectURL(file);
+                const container = document.getElementById('videoContainer');
+                container.innerHTML = '';
+                
+                const video = document.createElement('video');
+                video.id = 'videoPlayer';
+                video.src = url;
+                video.controls = true;
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.objectFit = 'contain';
+                video.style.display = 'block';
+                
+                container.appendChild(video);
+
+                video.addEventListener('timeupdate', () => {
+                    document.getElementById('currentTime').textContent = formatTime(video.currentTime);
+                    document.getElementById('videoTimeline').value = video.currentTime;
+                    
+                    // Throttle chart updates to 30 FPS
+                    const now = Date.now();
+                    if (now - lastUpdateTime > UPDATE_THROTTLE_MS) {
+                        updateChartsForTime(video.currentTime);
+                        lastUpdateTime = now;
+                    }
+                });
+
+                video.addEventListener('loadedmetadata', () => {
+                    document.getElementById('duration').textContent = formatTime(video.duration);
+                    document.getElementById('videoTimeline').max = video.duration;
+                    document.getElementById('addTimestampBtn').disabled = false;
+                    document.getElementById('markVideoBtn').disabled = false;
+                    loadTimestamps();
+                });
+            }
+        });
+
+        // Timeline seek
+        document.getElementById('videoTimeline').addEventListener('input', (e) => {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.currentTime = parseFloat(e.target.value);
+            }
+        });
+
+        // Upload CSV
+        document.getElementById('uploadCsvBtn').addEventListener('click', () => {
+            document.getElementById('csvInput').click();
+        });
+
+        document.getElementById('csvInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const lines = event.target.result.split('\n');
+                    const headers = lines[0].split(',').map(h => h.trim());
+                    csvData = [];
+
+                    for (let i = 1; i < lines.length; i++) {
+                        if (!lines[i].trim()) continue;
+                        const values = lines[i].split(',').map(v => parseFloat(v.trim()));
+                        const row = {};
+                        headers.forEach((h, j) => {
+                            row[h] = values[j];
+                        });
+                        csvData.push(row);
+                    }
+
+                    // Create evenly spaced time points - ignore the Time column from CSV
+                    csvTimesSeconds = csvData.map((_, idx) => idx / SAMPLE_RATE_HZ);
+                    
+                    updateCharts();
+                    const totalTime = csvTimesSeconds.length > 0 ? csvTimesSeconds[csvTimesSeconds.length - 1] : 0;
+                    document.getElementById('status').textContent = `csv loaded: ${csvData.length} points, ${totalTime.toFixed(2)}s total`;
+                    document.getElementById('markDataBtn').disabled = false;
+                    
+                    // Setup slider
+                    const slider = document.getElementById('dataTimelineSlider');
+                    slider.max = totalTime.toFixed(3);
+                    slider.value = 0;
+                    setupDataTimeline();
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        // Setup data timeline interaction
+        function setupDataTimeline() {
+            const slider = document.getElementById('dataTimelineSlider');
+            if (dataSliderListener) {
+                slider.removeEventListener('input', dataSliderListener);
+            }
+            dataSliderListener = handleDataSlider;
+            slider.addEventListener('input', dataSliderListener);
+        }
+
+        function handleDataSlider(e) {
+            const time = parseFloat(e.target.value);
+            const timeIndex = csvTimesSeconds.findIndex(t => t >= time);
+            const idx = timeIndex === -1 ? csvTimesSeconds.length - 1 : timeIndex;
+            dataMarkedTime = csvTimesSeconds[idx];
+            
+            updateChartsForTime(dataMarkedTime - syncOffset);
+            document.getElementById('dataTimeDisplay').textContent = formatTime(dataMarkedTime);
+        }
+
+        // Sync marking
+        document.getElementById('markVideoBtn').addEventListener('click', () => {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                videoMarkedTime = video.currentTime;
+                document.getElementById('syncStatus').textContent = `video mark: ${formatTime(videoMarkedTime)}`;
+                checkSyncReady();
+            }
+        });
+
+        document.getElementById('markDataBtn').addEventListener('click', () => {
+            if (csvData && csvTimesSeconds.length > 0) {
+                document.getElementById('syncStatus').textContent = `video: ${formatTime(videoMarkedTime)} → data: ${formatTime(dataMarkedTime)}`;
+                checkSyncReady();
+            }
+        });
+
+        function checkSyncReady() {
+            if (videoMarkedTime !== null && dataMarkedTime !== null) {
+                document.getElementById('setSyncBtn').disabled = false;
+            }
+        }
+
+        document.getElementById('setSyncBtn').addEventListener('click', () => {
+            syncOffset = dataMarkedTime - videoMarkedTime;
+            document.getElementById('syncStatus').textContent = `synced: offset ${syncOffset.toFixed(3)}s`;
+            document.getElementById('syncStatus').className = 'sync-status synced';
+            videoMarkedTime = null;
+            dataMarkedTime = null;
+            document.getElementById('setSyncBtn').disabled = true;
+        });
+
+        // Add timestamp
+        document.getElementById('addTimestampBtn').addEventListener('click', () => {
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                const label = document.getElementById('timestampLabel').value || formatTime(video.currentTime);
+                timestamps.push({ time: video.currentTime, label });
+                document.getElementById('timestampLabel').value = '';
+                renderTimestamps();
+                saveTimestamps();
+            }
+        });
+
+        // Save timestamps to localStorage
+        function saveTimestamps() {
+            if (videoFile) {
+                const key = `timestamps_${videoFile.name}_${videoFile.size}`;
+                localStorage.setItem(key, JSON.stringify(timestamps));
+            }
+        }
+
+        // Load timestamps from localStorage
+        function loadTimestamps() {
+            if (videoFile) {
+                const key = `timestamps_${videoFile.name}_${videoFile.size}`;
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    timestamps = JSON.parse(saved);
+                    renderTimestamps();
+                }
+            }
+        }
+
+        // Render timestamps
+        function renderTimestamps() {
+            const list = document.getElementById('timestampList');
+            list.innerHTML = timestamps.map((ts, i) => `
+                <div class="timestamp-item">
+                    <span>${ts.label} @ ${formatTime(ts.time)}</span>
+                    <button onclick="deleteTimestamp(${i})">×</button>
+                </div>
+            `).join('');
+        }
+
+        window.deleteTimestamp = (i) => {
+            timestamps.splice(i, 1);
+            renderTimestamps();
+            saveTimestamps();
+        };
+
+        // Update charts based on video time
+        function updateChartsForTime(videoTime) {
+            if (!csvData || csvTimesSeconds.length === 0) return;
+
+            const adjustedTime = videoTime + syncOffset;
+            const windowSize = 5;
+            const startTime = Math.max(0, adjustedTime - windowSize / 2);
+            const endTime = adjustedTime + windowSize / 2;
+
+            // Plot ALL data points, but only show window in chart view
+            const data = {
+                acc: [[], [], []],
+                gyro: [[], [], []],
+                mag: [[], [], []]
+            };
+
+            csvTimesSeconds.forEach((t, i) => {
+                const row = csvData[i];
+                data.acc[0].push({ x: t, y: row['ax'] || 0 });
+                data.acc[1].push({ x: t, y: row['ay'] || 0 });
+                data.acc[2].push({ x: t, y: row['az'] || 0 });
+                data.gyro[0].push({ x: t, y: row['gx'] || 0 });
+                data.gyro[1].push({ x: t, y: row['gy'] || 0 });
+                data.gyro[2].push({ x: t, y: row['gz'] || 0 });
+                data.mag[0].push({ x: t, y: row['mx'] || 0 });
+                data.mag[1].push({ x: t, y: row['my'] || 0 });
+                data.mag[2].push({ x: t, y: row['mz'] || 0 });
+            });
+
+            ['chartAcc', 'chartGyro', 'chartMag'].forEach((id, idx) => {
+                const sensorKey = Object.keys(data)[idx];
+                charts[id].data.datasets.forEach((ds, i) => {
+                    ds.data = data[sensorKey][i];
+                });
+                charts[id].options.scales.x.min = startTime;
+                charts[id].options.scales.x.max = endTime;
+                charts[id].update('none');
+            });
+
+            // Update marker position on charts
+            if (csvTimesSeconds.length > 0) {
+                const markerPercent = (adjustedTime - startTime) / (endTime - startTime);
+                const markerPos = Math.min(Math.max(markerPercent * 100, 0), 100);
+                
+                ['marker0', 'marker1', 'marker2'].forEach(id => {
+                    document.getElementById(id).style.display = 'block';
+                    document.getElementById(id).style.left = markerPos + '%';
+                });
+                
+                document.getElementById('dataTimeDisplay').textContent = formatTime(adjustedTime);
+            }
+        }
+
+        // Update all charts (full view) - plot EVERY point
+        function updateCharts() {
+            if (!csvData || csvTimesSeconds.length === 0) return;
+
+            const maxTime = csvTimesSeconds[csvTimesSeconds.length - 1];
+            ['chartAcc', 'chartGyro', 'chartMag'].forEach((id, sensorIdx) => {
+                const sensorKey = ['ax', 'ay', 'az', 'gx', 'gy', 'gz', 'mx', 'my', 'mz'];
+                const baseIdx = sensorIdx * 3;
+
+                for (let i = 0; i < 3; i++) {
+                    const key = sensorKey[baseIdx + i];
+                    const dataPoints = csvData.map((row, idx) => ({
+                        x: csvTimesSeconds[idx],
+                        y: row[key] || 0
+                    }));
+                    
+                    charts[id].data.datasets[i].data = dataPoints;
+                }
+                charts[id].options.scales.x.min = 0;
+                charts[id].options.scales.x.max = Math.max(5, maxTime);
+                charts[id].update('none');
+            });
+        }
+
+        // Clear all
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear all data?')) {
+                csvData = null;
+                csvTimesSeconds = [];
+                timestamps = [];
+                videoFile = null;
+                syncOffset = 0;
+                videoMarkedTime = null;
+                dataMarkedTime = null;
+                
+                document.getElementById('videoContainer').innerHTML = '<div style="color:#666;">no video loaded</div>';
+                document.getElementById('videoInput').value = '';
+                document.getElementById('csvInput').value = '';
+                
+                document.getElementById('timestampList').innerHTML = '';
+                document.getElementById('syncStatus').textContent = 'sync offset: 0s';
+                document.getElementById('syncStatus').className = 'sync-status';
+                
+                const slider = document.getElementById('dataTimelineSlider');
+                slider.max = 0;
+                slider.value = 0;
+                if (dataSliderListener) {
+                    slider.removeEventListener('input', dataSliderListener);
+                }
+                
+                ['marker0', 'marker1', 'marker2'].forEach(id => {
+                    document.getElementById(id).style.display = 'none';
+                });
+                document.getElementById('markVideoBtn').disabled = true;
+                document.getElementById('markDataBtn').disabled = true;
+                document.getElementById('setSyncBtn').disabled = true;
+                document.getElementById('addTimestampBtn').disabled = true;
+                
+                initCharts();
+                document.getElementById('status').textContent = 'cleared';
+            }
+        });
+
+        // Initialize
+        initCharts();
+    </script>
+</body>
+</html>
