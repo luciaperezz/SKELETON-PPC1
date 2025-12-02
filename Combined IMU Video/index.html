@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Motion Tracker – Skeleton + IMU Sync</title>
+  <title>Motion Tracker – MoveNet + IMU Sync</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     /* Global theme variables */
@@ -41,7 +41,7 @@
 
     /* Header */
     header {
-      margin: 80px 0 12px; /* top space above the title */
+      margin: 80px 0 12px;
     }
 
     header h1 {
@@ -84,7 +84,7 @@
       transform: scale(0.97);
     }
 
-    /* Control row (file input, start/stop, status text) */
+    /* Top controls row */
     .controls {
       display: flex;
       align-items: center;
@@ -158,21 +158,22 @@
       opacity: 0.85;
     }
 
-    /* Video / Canvas viewer + IMU-Panel */
+    /* Main viewer area: video on the left, IMU panel on the right */
     .viewer {
       margin-top: 10px;
       display: flex;
-      flex-direction: column;  /* mobil: untereinander */
+      flex-direction: column;  
       gap: 16px;
     }
 
+    /* Video + canvas container */
     #container {
       position: relative;
-      width: 480px;     
+      width: 480px;        
       max-width: 100%;
-      /* Dynamische Höhe über aspect-ratio,
-         wird später in JS auf das echte Videoformat gesetzt */
-      aspect-ratio: 4 / 3; /* Fallback, bis Video geladen ist */
+      /* Dynamic height via aspect-ratio.
+         JS will update this to the real video ratio once metadata is loaded. */
+      aspect-ratio: 4 / 3; 
       margin-inline: auto;
       border-radius: 16px;
       overflow: hidden;
@@ -190,7 +191,7 @@
       display: block;
     }
 
-    /* IMU upload / sync panel (visible only in upload mode) */
+    /* IMU upload / sync panel */
     .imu-panel {
       margin-top: 16px;
       padding: 12px 14px 16px;
@@ -252,13 +253,13 @@
     .imu-charts {
       margin-top: 10px;
       display: grid;
-      grid-template-columns: 1fr;  /* immer untereinander */
+      grid-template-columns: 1fr;  
       gap: 8px;
     }
 
     .imu-chart {
       position: relative;
-      height: 160px;          /* etwas höher für bessere Sichtbarkeit */
+      height: 160px;         
       background: rgba(0, 0, 0, 0.4);
       border-radius: 10px;
       padding: 6px;
@@ -275,8 +276,7 @@
       z-index: 10;
     }
 
-    /* Ab ~900px Bildschirmbreite: Video & IMU nebeneinander,
-       Video kleinerer Anteil, rechts mehr Platz */
+    /* On larger screens: video and IMU panel side-by-side */
     @media (min-width: 900px) {
       .viewer {
         flex-direction: row;
@@ -284,12 +284,12 @@
       }
 
       #container {
-        flex: 0 0 40%;   /* ~40% für Video */
+        flex: 0 0 40%; 
         margin-inline: 0;
       }
 
       #imu-panel {
-        flex: 1 1 60%;   /* ~60% für IMU / Plots */
+        flex: 1 1 60%; 
         margin-top: 0;
       }
     }
@@ -301,7 +301,7 @@
     <header>
       <h1>Motion Tracker</h1>
       <p class="subtitle">
-        Choose live camera or video upload with a PoseNet skeleton overlay and optional IMU CSV sync.
+        Live or uploaded video with MoveNet skeleton overlay and optional IMU CSV synchronization.
       </p>
     </header>
 
@@ -325,10 +325,10 @@
         <button id="btn-stop" class="btn secondary" disabled>Stop</button>
       </div>
 
-      <p id="status" class="status">Loading PoseNet…</p>
+      <p id="status" class="status">Initializing MoveNet…</p>
     </section>
 
-    <!-- Viewer: HTML5 video + canvas with PoseNet skeleton -->
+    <!-- Viewer: video + canvas on the left, IMU panel on the right -->
     <section class="viewer">
       <div id="container">
         <video id="video" playsinline></video>
@@ -386,11 +386,11 @@
     </section>
   </div>
 
-  <!-- TensorFlow.js (1.x, compatible with PoseNet) -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.7.4/dist/tf.min.js"></script>
+  <!-- TensorFlow.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0/dist/tf.min.js"></script>
 
-  <!-- PoseNet model -->
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.1/dist/posenet.min.js"></script>
+  <!-- MoveNet via pose-detection -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
 
   <!-- Chart.js for IMU plotting -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
