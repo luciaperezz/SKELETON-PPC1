@@ -204,6 +204,14 @@
         display: block;
       }
 
+      .imu-chart canvas {
+        position: relative;
+        inset: auto;
+        width: 100% !important;
+        height: 100% !important;
+          display: block;
+      }
+
       /* ---------- Timeline sliders ---------- */
       .imu-slider-row {
         margin-top: 10px;
@@ -280,14 +288,18 @@
         height: 170px;
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
-        padding: 8px 6px 6px;
-        overflow: hidden;
+        padding: 6px;
+        overflow: visible;
+        margin-top: 18px;
       }
 
       .imu-chart-caption {
+        position: absolute;
+        top: -16px;
+        left: 4px;
         font-size: 0.78rem;
-        margin-bottom: 4px;
         opacity: 0.8;
+        margin: 0;
       }
 
       .imu-chart-marker {
