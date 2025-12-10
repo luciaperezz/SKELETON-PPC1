@@ -5,233 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movesense IMU Sync</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <link rel="stylesheet" href="styles.css">
 
-        body {
-            font-family: monospace;
-            background: #1a1a1a;
-            color: #fff;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            font-weight: normal;
-        }
-
-        .controls {
-            margin-bottom: 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        button, input {
-            padding: 8px 12px;
-            background: #333;
-            color: #fff;
-            border: 1px solid #555;
-            cursor: pointer;
-            font-family: monospace;
-            font-size: 0.9em;
-        }
-
-        button:hover:not(:disabled) {
-            background: #444;
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        input[type="file"] {
-            padding: 6px;
-        }
-
-        input[type="range"] {
-            padding: 0;
-            cursor: pointer;
-            width: 100%;
-        }
-
-        .status {
-            margin-bottom: 15px;
-            font-size: 0.85em;
-            color: #888;
-        }
-
-        .layout {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .section {
-            border: 1px solid #333;
-            padding: 15px;
-            background: #0a0a0a;
-        }
-
-        .section-title {
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-            color: #666;
-        }
-
-        .chart-container {
-            position: relative;
-            height: 250px;
-            margin-bottom: 20px;
-        }
-
-        .chart-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .chart-marker {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: #0f0;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .video-section {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .video-container {
-            background: #000;
-            border: 1px solid #333;
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-
-        .video-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        video {
-            width: 100%;
-            height: 100%;
-            display: block;
-            object-fit: contain;
-        }
-
-        .timeline {
-            margin-bottom: 15px;
-        }
-
-        .timeline input {
-            width: 100%;
-            cursor: pointer;
-        }
-
-        .data-slider-wrapper {
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .data-slider-wrapper input[type="range"] {
-            width: 100%;
-        }
-
-        .sync-controls {
-            margin-top: 15px;
-            padding: 10px;
-            border: 1px solid #444;
-            background: #111;
-        }
-
-        .sync-status {
-            font-size: 0.8em;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .sync-status.synced {
-            color: #0f0;
-        }
-
-        .sync-buttons {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .sync-buttons button {
-            flex: 1;
-            min-width: 100px;
-        }
-
-        .timestamp-controls {
-            margin-top: 10px;
-            display: flex;
-            gap: 5px;
-        }
-
-        .timestamp-controls input {
-            flex: 1;
-        }
-
-        .timestamp-list {
-            margin-top: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-            border: 1px solid #333;
-            padding: 5px;
-        }
-
-        .timestamp-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px;
-            border-bottom: 1px solid #222;
-            font-size: 0.85em;
-        }
-
-        .timestamp-item button {
-            padding: 3px 6px;
-            font-size: 0.8em;
-        }
-
-        @media (max-width: 1200px) {
-            .layout {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
     <div class="container">
@@ -247,6 +22,12 @@
             <input type="file" id="csvInput" accept=".csv" style="display:none">
             
             <button id="clearBtn">Clear All</button>
+
+            <button id="exportProjectBtn">Export Project</button>
+            <button id="importProjectBtn">Import Project</button>
+            <button id="generateReportBtn">Generate Report</button>
+
+
         </div>
 
         <div class="layout">
@@ -273,8 +54,23 @@
                 <div class="timestamp-controls">
                     <button id="addTimestampBtn" disabled>Add Timestamp</button>
                     <input type="text" id="timestampLabel" placeholder="label (optional)">
+                    <select id="eventType">
+                        <option value="jump">Jump</option>
+                        <option value="turn">Turn</option>
+                        <option value="rest">Rest</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="notesInput" placeholder="Notes (optional)">
+
                 </div>
                 <div class="timestamp-list" id="timestampList"></div>
+                <div class="event-info" id="eventInfo" style="display: none;">
+                    <h3>Feedback for this timestamp</h3>
+                    <p id="eventLabel"></p>
+                    <p id="eventTime"></p>
+                    <p id="eventNotes"></p>
+                </div>
+                
             </div>
 
             <!-- Data Section -->
@@ -433,7 +229,7 @@
                     document.getElementById('videoTimeline').max = video.duration;
                     document.getElementById('addTimestampBtn').disabled = false;
                     document.getElementById('markVideoBtn').disabled = false;
-                    loadTimestamps();
+                    loadTimestamps_SynchOffset();
                 });
             }
         });
@@ -460,12 +256,15 @@
                     const headers = lines[0].split(',').map(h => h.trim());
                     csvData = [];
 
+                    const hasTimestamp = headers[0] === 'timestamp';
+
                     for (let i = 1; i < lines.length; i++) {
                         if (!lines[i].trim()) continue;
                         const values = lines[i].split(',').map(v => parseFloat(v.trim()));
                         const row = {};
-                        headers.forEach((h, j) => {
-                            row[h] = values[j];
+                        const startIndex = hasTimestamp ? 1 : 0;
+                        headers.slice(startIndex).forEach((h, j) => {
+                            row[h] = values[startIndex + j];
                         });
                         csvData.push(row);
                     }
@@ -506,6 +305,7 @@
             
             updateChartsForTime(dataMarkedTime - syncOffset);
             document.getElementById('dataTimeDisplay').textContent = formatTime(dataMarkedTime);
+            console.log('Data time:', dataMarkedTime, 'Adjusted time:', dataMarkedTime - syncOffset); 
         }
 
         // Sync marking
@@ -545,29 +345,42 @@
             const video = document.getElementById('videoPlayer');
             if (video) {
                 const label = document.getElementById('timestampLabel').value || formatTime(video.currentTime);
-                timestamps.push({ time: video.currentTime, label });
+                const eventType = document.getElementById('eventType').value;
+                const notes = document.getElementById('notesInput').value;
+                timestamps.push({ time: video.currentTime, label, eventType, notes });
                 document.getElementById('timestampLabel').value = '';
+                document.getElementById('notesInput').value = '';
                 renderTimestamps();
-                saveTimestamps();
+        saveTimestamps_SyncOffset();
             }
         });
 
         // Save timestamps to localStorage
-        function saveTimestamps() {
+        function saveTimestamps_SyncOffset() {
             if (videoFile) {
-                const key = `timestamps_${videoFile.name}_${videoFile.size}`;
-                localStorage.setItem(key, JSON.stringify(timestamps));
+                const key = `project_${videoFile.name}_${videoFile.size}`;
+                const projectData = {
+                    syncOffset: syncOffset,
+                    timestamps: timestamps
+                };
+                localStorage.setItem(key, JSON.stringify(projectData));
             }
         }
 
         // Load timestamps from localStorage
-        function loadTimestamps() {
+        function loadTimestamps_SynchOffset() {
             if (videoFile) {
-                const key = `timestamps_${videoFile.name}_${videoFile.size}`;
+                const key = `project_${videoFile.name}_${videoFile.size}`;
                 const saved = localStorage.getItem(key);
                 if (saved) {
-                    timestamps = JSON.parse(saved);
+                    const projectData = JSON.parse(saved);
+                    syncOffset = projectData.syncOffset;
+                    timestamps = projectData.timestamps;
+                    document.getElementById('syncStatus').textContent = `synced: offset ${syncOffset.toFixed(3)}s`;
+                    document.getElementById('syncStatus').className = 'sync-status synced';
                     renderTimestamps();
+                    updateChartsForTime(document.getElementById('videoPlayer')?.currentTime || 0);
+                    console.log('Loaded syncOffset:', syncOffset); // Verifica el valor del offset
                 }
             }
         }
@@ -576,17 +389,30 @@
         function renderTimestamps() {
             const list = document.getElementById('timestampList');
             list.innerHTML = timestamps.map((ts, i) => `
-                <div class="timestamp-item">
-                    <span>${ts.label} @ ${formatTime(ts.time)}</span>
+                <div class="timestamp-item" onclick="selectEvent(${i})">
+                    <span>${ts.label} @ ${formatTime(ts.time)} [${ts.eventType}]</span>
                     <button onclick="deleteTimestamp(${i})">×</button>
                 </div>
             `).join('');
         }
 
+        function selectEvent(index) {
+            const ts = timestamps[index];
+            const video = document.getElementById('videoPlayer');
+            if (video) {
+                video.currentTime = ts.time;
+            }
+            document.getElementById('eventLabel').textContent = `Label: ${ts.label}`;
+            document.getElementById('eventTime').textContent = `Time: ${formatTime(ts.time)}`;
+            document.getElementById('eventNotes').textContent = `Notes: ${ts.notes}`;
+            document.getElementById('eventInfo').style.display = 'block'; // Muestra el área de información
+
+        }
+
         window.deleteTimestamp = (i) => {
             timestamps.splice(i, 1);
             renderTimestamps();
-            saveTimestamps();
+            saveTimestamps_SyncOffset();
         };
 
         // Update charts based on video time
@@ -642,6 +468,7 @@
             }
         }
 
+
         // Update all charts (full view) - plot EVERY point
         function updateCharts() {
             if (!csvData || csvTimesSeconds.length === 0) return;
@@ -665,6 +492,113 @@
                 charts[id].update('none');
             });
         }
+
+        function loadProject() {
+            if (videoFile) {
+                const key = `project_${videoFile.name}_${videoFile.size}`;
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    const projectData = JSON.parse(saved);
+                    syncOffset = projectData.syncOffset;
+                    timestamps = projectData.timestamps;
+                    document.getElementById('syncStatus').textContent = `synced: offset ${syncOffset.toFixed(3)}s`;
+                    document.getElementById('syncStatus').className = 'sync-status synced';
+                    renderTimestamps();
+                    if (projectData.notes) {
+                        document.getElementById('notesInput').value = projectData.notes;
+                    } else {
+                        document.getElementById('notesInput').value = '';
+                    }
+                    updateChartsForTime(document.getElementById('videoPlayer')?.currentTime || 0);
+                }
+            }
+        }
+
+
+        function exportProject() {
+            const filename = prompt("Enter a filename for the project:", "movesense_project.json");
+            if (!filename) return;
+
+            const projectData = {
+                syncOffset: syncOffset,
+                timestamps: timestamps,
+                videoFileName: videoFile ? videoFile.name : null,
+                csvFileName: csvData ? "csv_data" : null,
+                sampleRate: SAMPLE_RATE_HZ,
+                createdAt: new Date().toISOString(),
+                notes: document.getElementById('notesInput')?.value || ''
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(projectData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", filename);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+
+            if (videoFile) {
+                const key = `project_${videoFile.name}_${videoFile.size}`;
+                localStorage.setItem(key, JSON.stringify(projectData));
+            }
+        }
+
+        function importProject() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.json';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const projectData = JSON.parse(event.target.result);
+                    syncOffset = projectData.syncOffset;
+                    timestamps = projectData.timestamps;
+                    document.getElementById('syncStatus').textContent = `synced: offset ${syncOffset.toFixed(3)}s`;
+                    document.getElementById('syncStatus').className = 'sync-status synced';
+                    renderTimestamps();
+                    if (projectData.notes) {
+                        document.getElementById('notesInput').value = projectData.notes;
+                    } else {
+                        document.getElementById('notesInput').value = '';
+
+                    }
+                    updateChartsForTime(document.getElementById('videoPlayer')?.currentTime || 0);
+
+                    if (videoFile) {
+                        const key = `project_${videoFile.name}_${videoFile.size}`;
+                        localStorage.setItem(key, JSON.stringify(projectData));
+                    }
+                };
+                reader.readAsText(file);
+            };
+            fileInput.click();
+        }
+
+        function generateReport() {
+            const filename = prompt("Enter a filename for the report:", "movesense_report.json");
+            if (!filename) return; 
+            const report = {
+                totalMovementTime: csvTimesSeconds.length > 0 ? csvTimesSeconds[csvTimesSeconds.length - 1] : 0,
+                numberOfEvents: timestamps.length,
+                averageAccX: csvData.reduce((sum, row) => sum + (row['ax'] || 0), 0) / csvData.length,
+                averageAccY: csvData.reduce((sum, row) => sum + (row['ay'] || 0), 0) / csvData.length,
+                averageAccZ: csvData.reduce((sum, row) => sum + (row['az'] || 0), 0) / csvData.length,
+                peakAccX: Math.max(...csvData.map(row => row['ax'] || 0)),
+                peakAccY: Math.max(...csvData.map(row => row['ay'] || 0)),
+                peakAccZ: Math.max(...csvData.map(row => row['az'] || 0)),
+                timestamps: timestamps
+            };
+
+            const reportStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", reportStr);
+            downloadAnchorNode.setAttribute("download",filename);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+
 
         // Clear all
         document.getElementById('clearBtn').addEventListener('click', () => {
@@ -704,6 +638,12 @@
                 document.getElementById('status').textContent = 'cleared';
             }
         });
+        
+
+        document.getElementById('exportProjectBtn').addEventListener('click', exportProject);
+        document.getElementById('importProjectBtn').addEventListener('click', importProject);
+        document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+
 
         // Initialize
         initCharts();
