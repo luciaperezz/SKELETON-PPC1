@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
-      /* ---------- Global theme variables ---------- */
+      /* Global theme variables */
       :root {
         --bg: #111;
         --fg: #ffffff;
@@ -18,15 +18,10 @@
         box-sizing: border-box;
       }
 
-      /* ---------- Page layout ---------- */
+      /* Page layout */
       body {
         margin: 0;
-        overflow: hidden;
         background: radial-gradient(circle at top, #222 0, var(--bg) 55%);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
         color: var(--fg);
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
           sans-serif;
@@ -34,15 +29,14 @@
 
       .app {
         width: 100%;
-        max-width: 960px;
-        padding: 16px;
-        max-height: 100vh;
-        overflow: auto;
+        max-width: 1200px;       
+        margin: 0 auto;          
+        padding: 16px 20px 24px; 
       }
 
-      /* ---------- Header ---------- */
+      /* Header */
       header {
-        margin: 80px 0 12px;
+        margin: 40px 0 12px; 
       }
 
       header h1 {
@@ -57,7 +51,7 @@
         opacity: 0.8;
       }
 
-      /* ---------- Mode switch buttons (live / upload) ---------- */
+      /* Mode switch buttons (live / upload) */
       .mode-switch {
         display: flex;
         gap: 8px;
@@ -86,7 +80,7 @@
         transform: scale(0.97);
       }
 
-      /* ---------- Top controls row ---------- */
+      /* Top controls row */
       .controls {
         display: flex;
         align-items: center;
@@ -160,7 +154,7 @@
         opacity: 0.85;
       }
 
-      /* ---------- Main viewer area ---------- */
+      /* Main viewer area */
       .viewer {
         margin-top: 10px;
         display: flex;
@@ -181,7 +175,7 @@
         gap: 10px;
       }
 
-      /* ---------- Video + canvas container ---------- */
+      /* Video + canvas container */
       #container {
         position: relative;
         width: 480px; /* slightly smaller video */
@@ -195,8 +189,8 @@
         background: #000;
       }
 
-      video,
-      canvas {
+      #container video,
+      #container canvas {
         position: absolute;
         inset: 0;
         width: 100%;
@@ -204,15 +198,7 @@
         display: block;
       }
 
-      .imu-chart canvas {
-        position: relative;
-        inset: auto;
-        width: 100% !important;
-        height: 100% !important;
-          display: block;
-      }
-
-      /* ---------- Timeline sliders ---------- */
+      /* Timeline sliders */
       .imu-slider-row {
         margin-top: 10px;
       }
@@ -231,7 +217,7 @@
         opacity: 0.9;
       }
 
-      /* ---------- IMU upload / sync panel ---------- */
+      /* IMU upload / sync panel */
       .imu-panel {
         margin-top: 16px;
         padding: 12px 14px 16px;
@@ -288,18 +274,14 @@
         height: 170px;
         background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
-        padding: 6px;
-        overflow: visible;
-        margin-top: 18px;
+        padding: 8px 6px 6px;
+        overflow: hidden;
       }
 
       .imu-chart-caption {
-        position: absolute;
-        top: -16px;
-        left: 4px;
         font-size: 0.78rem;
+        margin-bottom: 4px;
         opacity: 0.8;
-        margin: 0;
       }
 
       .imu-chart-marker {
@@ -313,7 +295,7 @@
         z-index: 10;
       }
 
-      /* ---------- Timestamp / project UI ---------- */
+      /* Timestamp / project UI */
       .timestamp-panel {
         margin-top: 4px;
         padding: 8px 10px 10px;
@@ -414,7 +396,7 @@
         color: var(--accent);
       }
 
-      /* ---------- Larger screens: video + IMU side by side ---------- */
+      /* Larger screens: video + IMU side by side */
       @media (min-width: 900px) {
         .viewer-main {
           flex-direction: row;
@@ -422,7 +404,7 @@
         }
 
         .viewer-left {
-          flex: 0 0 40%; /* linker Bereich: Video + Timestamps */
+          flex: 0 0 40%; 
           margin-inline: 0;
         }
 
@@ -432,7 +414,7 @@
         }
 
         #imu-panel {
-          flex: 1 1 60%; /* rechter Bereich: IMU */
+          flex: 1 1 60%;
           margin-top: 0;
         }
       }
