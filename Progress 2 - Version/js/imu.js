@@ -291,6 +291,10 @@ function setupCsvUpload() {
         markDataBtn.disabled = false;
       }
 
+      if (markDataBtn) {
+        markDataBtn.disabled = false;
+      }
+
       // Initialize charts + full data, then enable scrubbing
       initImuCharts();
       updateImuChartsFull();
@@ -741,6 +745,8 @@ function importProject() {
                 setStatus(
                   `Video loaded from project: ${videoName}. Click Start to begin.`
                 );
+                if (addTimestampBtn) addTimestampBtn.disabled = false;
+                if (markVideoBtn) markVideoBtn.disabled = false;
               };
             }
           }

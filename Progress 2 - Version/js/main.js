@@ -214,9 +214,13 @@ async function main() {
   uploadDetector = upload;
   detector = liveDetector;
 
+  if (projectControls) {
+    projectControls.style.display = "flex";
+  }
+
   // Attach UI event listeners
-  modeLiveBtn.addEventListener("click", () => selectMode("live"));
-  modeUploadBtn.addEventListener("click", () => selectMode("upload"));
+ // modeLiveBtn.addEventListener("click", () => selectMode("live"));
+ // modeUploadBtn.addEventListener("click", () => selectMode("upload"));
 
   startBtn.addEventListener("click", () => handleStart());
   stopBtn.addEventListener("click", () => stopTracking());

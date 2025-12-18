@@ -41,7 +41,7 @@ let uploadDetector = null;
 let detector = null;
 
 // Global state for tracking
-let currentMode = "live"; // "live" | "upload"
+let currentMode = "upload"; // "live" | "upload"
 let isRunning = false;
 let animationId = null;
 
@@ -173,10 +173,7 @@ async function renderFrame() {
 
   frameIndex++;
 
-  const flipHorizontal =
-    currentMode === "live"
-      ? FLIP_HORIZONTAL_LIVE
-      : FLIP_HORIZONTAL_UPLOAD;
+  const flipHorizontal = FLIP_HORIZONTAL_UPLOAD;
 
   let poseToDraw = lastPose;
 
@@ -191,15 +188,16 @@ async function renderFrame() {
       lastPose = poses[0] || null;
       poseToDraw = lastPose;
     }
-  } else {
+  } 
+  //else {
     // Live mode: estimate pose every frame (Lightning is fast)
-    const poses = await detector.estimatePoses(video, {
-      maxPoses: 1,
-      flipHorizontal,
-    });
-    lastPose = poses[0] || null;
-    poseToDraw = lastPose;
-  }
+    //const poses = await detector.estimatePoses(video, {
+      //maxPoses: 1,
+      //flipHorizontal,
+    //});
+    //lastPose = poses[0] || null;
+    //poseToDraw = lastPose;
+  //}
 
   if (!poseToDraw) {
     animationId = requestAnimationFrame(renderFrame);
@@ -219,9 +217,7 @@ async function renderFrame() {
   ctx.font = "14px system-ui, sans-serif";
 
   const modeLabel =
-    currentMode === "live"
-      ? "Mode: Live (MoveNet Lightning)"
-      : "Mode: Upload (MoveNet Thunder)";
+    currentMode === "Mode: Upload (MoveNet Thunder)";
 
   const poseScore =
     keypoints.length > 0
@@ -298,7 +294,7 @@ async function renderFrame() {
 async function handleStart() {
   if (isRunning) return;
 
-  if (currentMode === "live") {
+/*   if (currentMode === "live") {
     detector = liveDetector;
     if (!detector) {
       setStatus("Live MoveNet model is still loading…");
@@ -318,7 +314,7 @@ async function handleStart() {
     }
 
     video.playbackRate = 1.0;
-  } else {
+  } else */ {
     detector = uploadDetector;
     if (!detector) {
       setStatus("Upload MoveNet model is still loading…");
@@ -348,10 +344,7 @@ async function handleStart() {
 
   isRunning = true;
   setButtonsRunning(true);
-  setStatus(
-    currentMode === "live"
-      ? "Live MoveNet tracking is running…"
-      : "Video tracking with MoveNet…"
+  setStatus( "Video tracking with MoveNet…"
   );
   animationId = requestAnimationFrame(renderFrame);
 }
@@ -370,9 +363,9 @@ function stopTracking() {
     animationId = null;
   }
 
-  if (currentMode === "upload") {
-    video.pause();
-  }
+  
+  video.pause();
+  
 
   setStatus("Tracking stopped.");
 }
@@ -384,7 +377,7 @@ function stopTracking() {
  *  - Free resources for the previous mode
  *  - Prepare UI for the new mode
  */
-function selectMode(mode) {
+/* function selectMode(mode) {
   if (mode === currentMode) return;
 
   // Always stop tracking when changing mode
@@ -448,7 +441,17 @@ function selectMode(mode) {
 
     setStatus("Upload mode: select a video and then click Start.");
   }
-}
+} */
+
+  function selectMode(mode) {
+    currentMode = "upload";
+    uploadControls.style.display = "block";
+    if (imuPanel) {
+      imuPanel.style.display = "block";
+    }
+    setStatus("Upload mode: select a video and then click Start.");
+  }
+
 
 /**
  * Setup the video timeline slider for the currently loaded upload video.

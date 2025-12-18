@@ -34,7 +34,7 @@ const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 
 // Mode buttons
-const modeLiveBtn = document.getElementById("mode-live");
+//const modeLiveBtn = document.getElementById("mode-live");
 const modeUploadBtn = document.getElementById("mode-upload");
 
 // Upload controls + buttons
@@ -44,6 +44,7 @@ const startBtn = document.getElementById("btn-start");
 const stopBtn = document.getElementById("btn-stop");
 const clearBtn = document.getElementById("btn-clear");
 const statusEl = document.getElementById("status");
+const projectControls = document.getElementById("project-controls");
 
 // IMU / CSV controls
 const imuPanel = document.getElementById("imu-panel");

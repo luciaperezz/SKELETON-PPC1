@@ -6,81 +6,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <style>
-      /* Global theme variables */
       :root {
         --bg: #111;
         --fg: #ffffff;
         --accent: #00e676;
         --accent-soft: rgba(0, 230, 118, 0.15);
       }
-
-      * {
-        box-sizing: border-box;
-      }
-
-      /* Page layout */
+      * { box-sizing: border-box; }
       body {
         margin: 0;
         background: radial-gradient(circle at top, #222 0, var(--bg) 55%);
         color: var(--fg);
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-          sans-serif;
+        font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       }
-
+      
       .app {
         width: 100%;
-        max-width: 1200px;       
-        margin: 0 auto;          
-        padding: 16px 20px 24px; 
+        max-width: none;
+        margin: 0;
+        padding: 16px 48px 24px;
       }
 
-      /* Header */
-      header {
-        margin: 40px 0 12px; 
-      }
-
+      header { margin: 40px 0 12px; }
       header h1 {
         margin: 0 0 4px;
         font-size: 1.6rem;
         letter-spacing: 0.03em;
       }
-
       header .subtitle {
         margin: 0;
         font-size: 0.9rem;
         opacity: 0.8;
       }
 
-      /* Mode switch buttons (live / upload) */
       .mode-switch {
         display: flex;
         gap: 8px;
         margin: 16px 0 8px;
       }
-
       .mode-btn {
         flex: 1;
         padding: 8px 12px;
         border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(0,0,0,0.4);
         color: var(--fg);
         font-size: 0.9rem;
         cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease,
-          transform 0.1s;
+        transition: background .15s ease,border-color .15s ease,transform .1s;
       }
-
       .mode-btn.active {
         background: var(--accent-soft);
         border-color: var(--accent);
       }
+      .mode-btn:active { transform: scale(0.97); }
 
-      .mode-btn:active {
-        transform: scale(0.97);
-      }
-
-      /* Top controls row */
       .controls {
         display: flex;
         align-items: center;
@@ -88,64 +68,52 @@
         flex-wrap: wrap;
         margin-bottom: 12px;
       }
-
-      .upload-controls {
-        /* Shown only in upload mode via JS */
+      .upload-controls { display: none; }
+      
+      #project-controls {
         display: none;
       }
 
-      .file-label {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
-        border-radius: 999px;
-        border: 1px dashed rgba(255, 255, 255, 0.35);
-        font-size: 0.85rem;
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.35);
-      }
-
-      .file-label input {
-        display: none;
-      }
-
-      .buttons {
-        display: flex;
-        gap: 8px;
-      }
-
+      .buttons { display: flex; gap: 8px; }
       .btn {
         padding: 6px 14px;
         border-radius: 999px;
         border: 1px solid transparent;
         font-size: 0.9rem;
         cursor: pointer;
-        transition: background 0.15s ease, border-color 0.15s ease,
-          transform 0.1s, opacity 0.1s;
+        transition: background .15s ease,border-color .15s ease,transform .1s,opacity .1s;
       }
-
       .btn.primary {
         background: var(--accent);
         color: #000;
-        border-color: transparent;
       }
-
       .btn.secondary {
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(255,255,255,0.08);
         color: var(--fg);
-        border-color: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255,255,255,0.18);
       }
-
       .btn:disabled {
-        opacity: 0.5;
+        opacity: .5;
         cursor: default;
         transform: none;
       }
+      .btn:not(:disabled):active { transform: scale(0.97); }
 
-      .btn:not(:disabled):active {
-        transform: scale(0.97);
+      .file-label,
+      .btn.file-like {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 6px 14px;        
+        border-radius: 999px;
+        border: 1px dashed rgba(255,255,255,0.35);
+        font-size: 0.9rem;
+        cursor: pointer;
+        background: rgba(0,0,0,0.35);
+        line-height: 1.2;      
       }
+      .file-label input { display: none; }
 
       .status {
         flex: 1;
@@ -154,41 +122,35 @@
         opacity: 0.85;
       }
 
-      /* Main viewer area */
       .viewer {
         margin-top: 10px;
         display: flex;
         flex-direction: column;
         gap: 16px;
       }
-
       .viewer-main {
-        /* Holds video container + IMU panel side by side on large screens */
         display: flex;
         flex-direction: column;
         gap: 16px;
       }
-
       .viewer-left {
         display: flex;
         flex-direction: column;
         gap: 10px;
       }
 
-      /* Video + canvas container */
       #container {
         position: relative;
-        width: 480px; /* slightly smaller video */
+        width: 480px;
         max-width: 100%;
-        aspect-ratio: 4 / 3; /* JS updates to real video ratio */
+        aspect-ratio: 4/3;
         margin-inline: auto;
         border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        border: 1px solid rgba(255,255,255,0.08);
         background: #000;
       }
-
       #container video,
       #container canvas {
         position: absolute;
@@ -198,224 +160,175 @@
         display: block;
       }
 
-      /* Timeline sliders */
-      .imu-slider-row {
-        margin-top: 10px;
-      }
-
-      .video-slider-row {
-        margin-top: 0; /* directly under controls */
-      }
-
-      .imu-slider-row input[type="range"] {
-        width: 100%;
-      }
-
+      .imu-slider-row { margin-top: 10px; }
+      .video-slider-row { margin-top: 0; }
+      .imu-slider-row input[type=range]{ width:100%; }
       .imu-time {
         font-size: 0.8rem;
         margin-top: 4px;
         opacity: 0.9;
       }
 
-      /* IMU upload / sync panel */
       .imu-panel {
         margin-top: 16px;
         padding: 12px 14px 16px;
         border-radius: 14px;
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(0,0,0,0.45);
+        border: 1px solid rgba(255,255,255,0.15);
       }
-
       .imu-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.9rem;
-        margin-bottom: 6px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:8px;
+        font-size:0.9rem;
+        margin-bottom:6px;
       }
-
       .imu-status {
-        font-size: 0.8rem;
-        opacity: 0.85;
+        font-size:0.8rem;
+        opacity:0.85;
       }
-
       .imu-controls {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.8rem;
-        margin-bottom: 6px;
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:8px;
+        font-size:0.8rem;
+        margin-bottom:6px;
       }
-
       .imu-sync-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.8rem;
-        margin-top: 4px;
+        display:flex;
+        flex-wrap:wrap;
+        align-items:center;
+        gap:8px;
+        font-size:0.8rem;
+        margin-top:4px;
       }
-
-      .imu-sync-row span {
-        opacity: 0.9;
-      }
+      .imu-sync-row span { opacity:0.9; }
 
       .imu-charts {
-        margin-top: 10px;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px;
+        margin-top:10px;
+        display:grid;
+        grid-template-columns:1fr;
+        gap:8px;
       }
-
       .imu-chart {
-        position: relative;
-        height: 170px;
-        background: rgba(0, 0, 0, 0.4);
-        border-radius: 10px;
-        padding: 8px 6px 6px;
-        overflow: hidden;
+        position:relative;
+        height:170px;
+        background:rgba(0,0,0,0.4);
+        border-radius:10px;
+        padding:8px 6px 6px;
+        overflow:hidden;
       }
-
       .imu-chart-caption {
-        font-size: 0.78rem;
-        margin-bottom: 4px;
-        opacity: 0.8;
+        font-size:0.78rem;
+        margin-bottom:4px;
+        opacity:0.8;
       }
-
       .imu-chart-marker {
-        /* Vertical green line that follows the synced time */
-        position: absolute;
-        top: 24px;
-        bottom: 6px;
-        width: 2px;
-        background: #00e676;
-        pointer-events: none;
-        z-index: 10;
+        position:absolute;
+        top:24px;
+        bottom:6px;
+        width:2px;
+        background:#00e676;
+        pointer-events:none;
+        z-index:10;
       }
 
-      /* Timestamp / project UI */
       .timestamp-panel {
-        margin-top: 4px;
-        padding: 8px 10px 10px;
-        border-radius: 14px;
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        margin-top:4px;
+        padding:8px 10px 10px;
+        border-radius:14px;
+        background:rgba(0,0,0,0.45);
+        border:1px solid rgba(255,255,255,0.15);
       }
-
       .timestamp-controls {
-        margin-top: 4px;
-        display: flex;
-        gap: 6px;
-        flex-wrap: wrap;
+        margin-top:4px;
+        display:flex;
+        gap:6px;
+        flex-wrap:wrap;
       }
-
-      .timestamp-controls button {
-        flex: 0 0 auto;
-      }
-
+      .timestamp-controls button { flex:0 0 auto; }
       .timestamp-controls input,
       .timestamp-controls select {
-        flex: 1;
-        min-width: 0;
-        padding: 4px 8px;
-        border-radius: 999px;
-        border: 1px solid rgba(255, 255, 255, 0.25);
-        background: rgba(0, 0, 0, 0.4);
-        color: var(--fg);
-        font-size: 0.8rem;
+        flex:1;
+        min-width:0;
+        padding:4px 8px;
+        border-radius:999px;
+        border:1px solid rgba(255,255,255,0.25);
+        background:rgba(0,0,0,0.4);
+        color:var(--fg);
+        font-size:0.8rem;
       }
-
       .timestamp-list {
-        margin-top: 8px;
-        max-height: 150px;
-        overflow-y: auto;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        padding: 4px;
-        font-size: 0.8rem;
+        margin-top:8px;
+        max-height:150px;
+        overflow-y:auto;
+        border-radius:8px;
+        border:1px solid rgba(255,255,255,0.15);
+        padding:4px;
+        font-size:0.8rem;
       }
-
       .timestamp-empty {
-        opacity: 0.7;
-        font-size: 0.78rem;
-        padding: 2px 4px;
+        opacity:0.7;
+        font-size:0.78rem;
+        padding:2px 4px;
       }
-
       .timestamp-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 4px 6px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        cursor: pointer;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        padding:4px 6px;
+        border-bottom:1px solid rgba(255,255,255,0.08);
+        cursor:pointer;
+      }
+      .timestamp-item:last-child{ border-bottom:none; }
+      .timestamp-item:hover{ background:rgba(255,255,255,0.04); }
+      .timestamp-item button{
+        padding:2px 6px;
+        border-radius:999px;
+        font-size:0.7rem;
       }
 
-      .timestamp-item:last-child {
-        border-bottom: none;
+      .event-info{
+        margin-top:8px;
+        padding:8px 10px;
+        border-radius:8px;
+        border:1px solid rgba(255,255,255,0.18);
+        background:rgba(0,0,0,0.4);
+        font-size:0.8rem;
       }
-
-      .timestamp-item:hover {
-        background: rgba(255, 255, 255, 0.04);
+      .event-info h3{
+        margin:0 0 6px;
+        font-size:0.85rem;
+        color:var(--accent);
+        letter-spacing:0.05em;
+        text-transform:uppercase;
       }
+      .event-info p{ margin:2px 0; }
 
-      .timestamp-item button {
-        padding: 2px 6px;
-        border-radius: 999px;
-        font-size: 0.7rem;
+      .sync-status{
+        font-size:0.8rem;
+        color:rgba(255,255,255,0.75);
       }
+      .sync-status.synced{ color:var(--accent); }
 
-      .event-info {
-        margin-top: 8px;
-        padding: 8px 10px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        background: rgba(0, 0, 0, 0.4);
-        font-size: 0.8rem;
-      }
-
-      .event-info h3 {
-        margin: 0 0 6px;
-        font-size: 0.85rem;
-        color: var(--accent);
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-      }
-
-      .event-info p {
-        margin: 2px 0;
-      }
-
-      .sync-status {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.75);
-      }
-
-      .sync-status.synced {
-        color: var(--accent);
-      }
-
-      /* Larger screens: video + IMU side by side */
-      @media (min-width: 900px) {
-        .viewer-main {
-          flex-direction: row;
-          align-items: flex-start;
+      @media (min-width:900px){
+        .viewer-main{
+          flex-direction:row;
+          align-items:flex-start;
         }
-
-        .viewer-left {
-          flex: 0 0 40%; 
-          margin-inline: 0;
+        .viewer-left{
+          flex:0 0 55%;
+          margin-inline:0;
         }
-
-        #container {
-          width: 100%;
-          margin-inline: 0;
+        #container{
+          width:100%;
+          margin-inline:0;
         }
-
-        #imu-panel {
-          flex: 1 1 60%;
-          margin-top: 0;
+        #imu-panel{
+          flex:1 1 45%;
+          margin-top:0;
         }
       }
     </style>
@@ -426,38 +339,53 @@
       <header>
         <h1>Motion Tracker</h1>
         <p class="subtitle">
-          Live or uploaded video with MoveNet skeleton overlay and optional IMU
+          Uploaded video with MoveNet skeleton overlay and optional IMU
           CSV synchronization.
         </p>
       </header>
 
-      <!-- Mode selection: video upload vs. live webcam -->
       <section class="mode-switch">
         <button id="mode-upload" class="mode-btn active">Video upload</button>
-        <button id="mode-live" class="mode-btn">Live tracking</button>
       </section>
 
-      <!-- Global controls: file picker, start/stop, status text -->
       <section class="controls">
-        <div id="upload-controls" class="upload-controls">
-          <label class="file-label">
-            <span>Select video</span>
-            <input type="file" id="video-file-input" accept="video/*" />
-          </label>
-        </div>
+        <div style="display:flex; justify-content:space-between; width:100%; gap:12px;">
+          <!-- ROW 1: Select video, Select CSV, Start, Stop -->
+          <div id="upload-controls" class="upload-controls">
+            <label class="file-label">
+              <span>Select video</span>
+              <input type="file" id="video-file-input" accept="video/*" />
+            </label>
 
-        <div class="buttons">
-          <button id="btn-start" class="btn primary">Start</button>
-          <button id="btn-stop" class="btn secondary" disabled>Stop</button>
-          <button id="btn-clear" class="btn secondary">Clear</button>
+            <button id="uploadCsvBtn" class="btn secondary file-like">
+              Select CSV
+            </button>
+
+            <button id="btn-start" class="btn primary">Start</button>
+            <button id="btn-stop" class="btn secondary" disabled>Pause</button>
+          </div>
+
+          <!-- ROW 2: Export / Import / Report / Clear -->
+          <div class="buttons" id="project-controls">
+            <button id="exportProjectBtn" class="btn secondary">
+              Export project
+            </button>
+            <button id="importProjectBtn" class="btn secondary">
+              Import project
+            </button>
+            <button id="generateReportBtn" class="btn secondary">
+              Generate report
+            </button>
+            <button id="btn-clear" class="btn secondary">Clear</button>
+          </div>
         </div>
 
         <p id="status" class="status">Initializing MoveNet…</p>
       </section>
 
-      <!-- Main viewer (video + IMU) -->
+
+
       <section class="viewer">
-        <!-- Video time slider -->
         <div class="imu-slider-row video-slider-row">
           <input
             type="range"
@@ -474,17 +402,13 @@
           </div>
         </div>
 
-        <!-- Video + IMU panel side by side on large screens -->
         <div class="viewer-main">
-          <!-- Linke Seite: Video + Timestamp-Block -->
           <div class="viewer-left">
-            <!-- Video container with MoveNet canvas overlay -->
             <div id="container">
               <video id="video" playsinline></video>
               <canvas id="canvas"></canvas>
             </div>
 
-            <!-- Timestamp-Panel unter dem Video -->
             <section class="timestamp-panel">
               <div class="timestamp-controls">
                 <button id="addTimestampBtn" class="btn secondary" disabled>
@@ -508,7 +432,7 @@
               </div>
 
               <div class="timestamp-list" id="timestampList"></div>
-              <div class="event-info" id="eventInfo" style="display: none;">
+              <div class="event-info" id="eventInfo" style="display:none;">
                 <h3>Feedback for this timestamp</h3>
                 <p id="eventLabel"></p>
                 <p id="eventTime"></p>
@@ -517,35 +441,21 @@
             </section>
           </div>
 
-          <!-- Rechte Seite: IMU / CSV upload + sync + plots -->
-          <section id="imu-panel" class="imu-panel" style="display: none;">
+          <section id="imu-panel" class="imu-panel">
             <div class="imu-header">
               <span>IMU sync (CSV + video)</span>
               <span id="imu-status" class="imu-status">No CSV loaded</span>
             </div>
 
             <div class="imu-controls">
-              <button id="uploadCsvBtn" class="btn secondary">
-                Upload CSV
-              </button>
               <input
                 type="file"
                 id="csvInput"
                 accept=".csv"
                 style="display: none;"
               />
-              <button id="exportProjectBtn" class="btn secondary">
-                Export project
-              </button>
-              <button id="importProjectBtn" class="btn secondary">
-                Import project
-              </button>
-              <button id="generateReportBtn" class="btn secondary">
-                Generate report
-              </button>
             </div>
 
-            <!-- Two-step sync: mark video + mark data, then apply offset -->
             <div class="imu-sync-row">
               <button id="markVideoBtn" class="btn secondary" disabled>
                 Mark video time
@@ -559,7 +469,6 @@
               <span id="syncStatus" class="sync-status">sync offset: 0s</span>
             </div>
 
-            <!-- IMU time slider -->
             <div class="imu-slider-row">
               <input
                 type="range"
@@ -574,7 +483,6 @@
               </div>
             </div>
 
-            <!-- Three stacked charts for acc / gyro / mag -->
             <div class="imu-charts">
               <div class="imu-chart">
                 <div class="imu-chart-caption">
@@ -617,13 +525,10 @@
       </section>
     </div>
 
-    <!-- External libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-
-    <!-- App scripts (order matters: config → IMU → MoveNet → main) -->
     <script src="js/config.js"></script>
     <script src="js/imu.js"></script>
     <script src="js/movenet.js"></script>
