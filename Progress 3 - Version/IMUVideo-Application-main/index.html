@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Motion Tracker — MoveNet + IMU Sync</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- App styles -->
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+
+  <body>
+
+    <!-- =========================================================
+        Mode selection screen (initial landing view)
+
+        Goal:
+        - When the page loads, show ONLY a single button:
+            "Video upload mode"
+        - Clicking it fades smoothly into the main application.
+
+        Future:
+        - Add more mode buttons inside `.mode-buttons`.
+          The JS is written to handle multiple buttons automatically.
+        ========================================================= -->
+    <div id="modeSelector" class="mode-selector-screen" aria-label="Select mode">
+      <div class="mode-card">
+        <h1 class="mode-title">MoveSync</h1>
+        <p class="mode-subtitle">Choose a mode to begin</p>
+
+        <div class="mode-buttons">
+          <!-- For now we keep ONE mode button. Add more later with data-mode="..." -->
+          <button
+            class="btn primary mode-start-btn"
+            type="button"
+            data-mode="upload"
+            id="modeStartUpload"
+          >
+            Video upload mode
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         Main application UI
+         ========================================================= -->
+
+    <div id="appRoot" class="app-root" aria-hidden="true">
+      <div class="app">
+        <!-- =========================================================
+            Header
+            ========================================================= -->
+        <header>
+          <h1>MoveSync</h1>
+          <h2 class="tagline">motion captured ⟶ patterns revealed</h2>
+          <p class="subtitle">
+            Uploaded video with MoveNet skeleton overlay and optional IMU CSV synchronization.
+          </p>
+        </header>
+
+        <!-- =========================================================
+            Mode (currently only upload mode)
+            Fades in after selecting a mode.
+            ========================================================= -->
+        <section class="mode-switch" aria-label="Mode">
+          <button id="mode-upload" class="mode-btn active" type="button">
+            Video upload
+          </button>
+        </section>
+
+        <!-- =========================================================
+            Top-level controls (project + file selection)
+            ========================================================= -->
+        <section class="controls" aria-label="Project controls">
+          <!-- NOTE:
+              Keeping the structure as two groups (upload vs project)
+              makes it easy to understand and style. -->
+          <div class="controls-row" style="display:flex; justify-content:space-between; width:100%; gap:12px;">
+            <!-- Upload / run controls -->
+            <div id="upload-controls" class="upload-controls">
+              <label class="file-label">
+                <span>Select video</span>
+                <input type="file" id="video-file-input" accept="video/*" />
+              </label>
+
+              <!-- This button triggers the hidden CSV <input> inside the IMU panel -->
+              <button id="uploadCsvBtn" class="btn secondary file-like" type="button">
+                Select CSV
+              </button>
+
+              <button id="btn-start" class="btn primary" type="button">Start</button>
+              <button id="btn-stop" class="btn secondary" type="button" disabled>
+                Pause
+              </button>
+            </div>
+
+            <!-- Project actions -->
+            <div class="buttons" id="project-controls">
+              <button id="exportProjectBtn" class="btn secondary" type="button">
+                Export project
+              </button>
+              <button id="importProjectBtn" class="btn secondary" type="button">
+                Import project
+              </button>
+              <button id="generateReportBtn" class="btn secondary" type="button">
+                Generate report
+              </button>
+              <button id="btn-clear" class="btn secondary" type="button">
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <p id="status" class="status">Initializing MoveNet…</p>
+        </section>
+
+        <!-- =========================================================
+            Viewer
+            - Left: Video + pose overlay
+            - Right: IMU charts + sync + (NEW) IMU playback controls
+            ========================================================= -->
+        <section class="viewer" aria-label="Viewer">
+          <div class="viewer-main">
+            <!-- =========================
+                VIDEO PANEL
+                ========================= -->
+            <div class="viewer-left" aria-label="Video panel">
+              <!-- Video + overlay canvas (the "video window") -->
+              <div id="container">
+                <video id="video" playsinline></video>
+                <canvas id="canvas"></canvas>
+              </div>
+
+              <!-- Video timeline (slider is under the video window) -->
+              <div class="imu-slider-row video-slider-row" aria-label="Video timeline">
+                <input
+                  type="range"
+                  id="videoTimelineSlider"
+                  min="0"
+                  max="0"
+                  value="0"
+                  step="0.01"
+                />
+                <div class="imu-time">
+                  Video time: <span id="videoTimeDisplay">0:00.00</span>
+                  &nbsp;|&nbsp;
+                  Step: <span id="videoStepDisplay">0 / 0</span>
+                </div>
+              </div>
+
+              <!-- Video playback controls (controls are under the video window) -->
+              <div class="video-controls video-slider-under" aria-label="Video playback controls">
+                <button id="videoPlayPauseBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" id="videoPlayPauseIcon" aria-hidden="true">▶</span>
+                  <span class="btn-text" id="videoPlayPauseText">Play</span>
+                </button>
+
+                <button id="videoBackBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" aria-hidden="true">⏪</span>
+                  <span class="btn-text">Back</span>
+                </button>
+
+                <button id="videoForwardBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" aria-hidden="true">⏩</span>
+                  <span class="btn-text">Forward</span>
+                </button>
+
+                <label class="speed-label">
+                  Speed:
+                  <select id="videoSpeedSelect">
+                    <option value="0.25">0.25×</option>
+                    <option value="0.5">0.50×</option>
+                    <option value="0.75">0.75×</option>
+                    <option value="1" selected>1.00×</option>
+                    <option value="1.25">1.25×</option>
+                    <option value="1.5">1.50×</option>
+                    <option value="1.75">1.75×</option>
+                    <option value="2">2.00×</option>
+                  </select>
+                </label>
+              </div>
+
+              <!-- Timestamp / annotation UI -->
+              <section class="timestamp-panel" aria-label="Timestamps">
+                <div class="timestamp-controls">
+                  <button id="addTimestampBtn" class="btn secondary" type="button" disabled>
+                    Add timestamp
+                  </button>
+
+                  <input
+                    type="text"
+                    id="timestampLabel"
+                    placeholder="label (optional)"
+                  />
+
+                  <select id="eventType">
+                    <option value="clap">Clap</option>
+                    <option value="jump">Jump</option>
+                    <option value="other">Other</option>
+                  </select>
+
+                  <input
+                    type="text"
+                    id="notesInput"
+                    placeholder="Notes (optional)"
+                  />
+                </div>
+
+                <div class="timestamp-list" id="timestampList"></div>
+
+                <div class="event-info" id="eventInfo" style="display:none;">
+                  <h3>Feedback for this timestamp</h3>
+                  <p id="eventLabel"></p>
+                  <p id="eventTime"></p>
+                  <p id="eventNotes"></p>
+                </div>
+              </section>
+            </div>
+
+            <!-- =========================
+                IMU PANEL
+                ========================= -->
+            <section id="imu-panel" class="imu-panel" aria-label="IMU panel">
+              <div class="imu-header">
+                <span>IMU sync (CSV + video)</span>
+                <span id="imu-status" class="imu-status">No CSV loaded</span>
+              </div>
+
+              <!-- Hidden file input. The visible "Select CSV" button in the top toolbar
+                  should trigger this input via JS. -->
+              <div class="imu-controls">
+                <input type="file" id="csvInput" accept=".csv" style="display:none;" />
+              </div>
+
+              <!-- Sync controls (mark + apply offset) -->
+              <div class="imu-sync-row" aria-label="IMU sync controls">
+                <button id="markVideoBtn" class="btn secondary" type="button" disabled>
+                  Mark video time
+                </button>
+                <button id="markDataBtn" class="btn secondary" type="button" disabled>
+                  Mark data time
+                </button>
+                <button id="setSyncBtn" class="btn secondary" type="button" disabled>
+                  Apply sync
+                </button>
+                <span id="syncStatus" class="sync-status">sync offset: 0s</span>
+              </div>
+
+              <!-- IMU charts (the "IMU window") -->
+              <div class="imu-charts" aria-label="IMU charts">
+                <div class="imu-chart">
+                  <div class="imu-chart-caption">
+                    Accelerometer: linear acceleration in X/Y/Z directions
+                  </div>
+                  <div id="marker0" class="imu-chart-marker" style="display:none;"></div>
+                  <canvas id="chartAcc"></canvas>
+                </div>
+
+                <div class="imu-chart">
+                  <div class="imu-chart-caption">
+                    Gyroscope: angular velocity around X/Y/Z axes
+                  </div>
+                  <div id="marker1" class="imu-chart-marker" style="display:none;"></div>
+                  <canvas id="chartGyro"></canvas>
+                </div>
+
+                <div class="imu-chart">
+                  <div class="imu-chart-caption">
+                    Magnetometer: magnetic field strength along X/Y/Z axes
+                  </div>
+                  <div id="marker2" class="imu-chart-marker" style="display:none;"></div>
+                  <canvas id="chartMag"></canvas>
+                </div>
+              </div>
+
+              <!-- IMU timeline + (NEW) IMU playback controls
+                  Requirement: "I want the same controls for IMU as for the video"
+                  + "both sliders and controls shall be under the IMU and video windows".
+
+                  IMPORTANT:
+                  - These IMU buttons are new DOM elements. They need event listeners in JS
+                    (similar to the video controls) to play/pause/step through IMU time.
+                  - IDs are unique (no duplicates), to avoid hard-to-debug DOM issues.
+              -->
+              <div class="imu-slider-row" aria-label="IMU timeline">
+                <input
+                  type="range"
+                  id="dataTimelineSlider"
+                  min="0"
+                  max="0"
+                  value="0"
+                  step="0.01"
+                />
+                <div class="imu-time">
+                  Data time: <span id="dataTimeDisplay">0:00.00</span>
+                </div>
+              </div>
+
+              <div class="imu-playback-controls" aria-label="IMU playback controls" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:8px;">
+                <button id="imuPlayPauseBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" id="imuPlayPauseIcon" aria-hidden="true">▶</span>
+                  <span class="btn-text" id="imuPlayPauseText">Play</span>
+                </button>
+
+                <button id="imuBackBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" aria-hidden="true">⏪</span>
+                  <span class="btn-text">Back</span>
+                </button>
+
+                <button id="imuForwardBtn" class="btn secondary icon-btn" type="button" disabled>
+                  <span class="icon" aria-hidden="true">⏩</span>
+                  <span class="btn-text">Forward</span>
+                </button>
+
+                <label class="speed-label">
+                  Speed:
+                  <select id="imuSpeedSelect" disabled>
+                    <option value="0.25">0.25×</option>
+                    <option value="0.5">0.50×</option>
+                    <option value="0.75">0.75×</option>
+                    <option value="1" selected>1.00×</option>
+                    <option value="1.25">1.25×</option>
+                    <option value="1.5">1.50×</option>
+                    <option value="1.75">1.75×</option>
+                    <option value="2">2.00×</option>
+                  </select>
+                </label>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         Libraries (load BEFORE app scripts)
+         ========================================================= -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <!-- =========================================================
+         App scripts (defer keeps HTML parsing fast and preserves order)
+         ========================================================= -->
+    
+    <!-- Mode selection + config -->
+    <script src="js/modeSelector.js" defer></script>
+    <script src="js/config.js" defer></script>
+
+    <!-- IMU modules -->
+    <script src="js/imu/state.js" defer></script>
+    <script src="js/imu/charts.js" defer></script>
+    <script src="js/imu/csv.js" defer></script>
+    <script src="js/imu/sync.js" defer></script>
+    <script src="js/imu/project.js" defer></script>
+    <script src="js/imu/exportImport.js" defer></script>
+    <script src="js/imu/report.js" defer></script>
+    <script src="js/imu/timestamps.js" defer></script>
+    <script src="js/imu/init.js" defer></script>
+    <script src="js/imu/playback.js" defer></script>
+
+    <!-- Pose + app entry -->
+    <script src="js/movenet.js" defer></script>
+    <script src="js/main.js" defer></script>
+  
+    
+
+  </body>
+</html>
